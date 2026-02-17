@@ -1,11 +1,14 @@
+server:
+  port: ${PORT:8082}
+
 spring:
   application:
     name: fiap-x-microservice-auth
   
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/auth_db}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
   
   jpa:
@@ -22,8 +25,6 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
-server:
-  port: ${PORT:8081}
 
 # JWT Configuration
 jwt:
@@ -34,7 +35,7 @@ jwt:
 
 # User Service Configuration
 user-service:
-  base-url: ${USER_SERVICE_URL:http://localhost:8080}
+  base-url: ${USER_SERVICE_URL:http://localhost:8081}
   timeout: ${USER_SERVICE_TIMEOUT:5000}
 
 # Actuator
@@ -50,6 +51,8 @@ management:
 # Logging
 logging:
   level:
-    root: INFO
+    root: ${LOGGING_LEVEL_ROOT:INFO}
     br.com.fiapx: ${LOG_LEVEL:DEBUG}
+    org.hibernate.SQL: ${LOGGING_LEVEL_SQL:INFO}
     org.springframework.security: ${SECURITY_LOG_LEVEL:DEBUG}
+    br.com.fiapx.fiapxauth: ${LOGGING_LEVEL_FIAP_X_USER:DEBUG}

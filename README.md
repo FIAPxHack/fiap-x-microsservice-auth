@@ -78,9 +78,9 @@ Configure as seguintes variáveis de ambiente antes de executar o serviço:
 
 ```bash
 # Banco de Dados
-DB_URL=jdbc:postgresql://localhost:5432/auth_db
-DB_USERNAME=postgres
-DB_PASSWORD=postgres
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/auth_db
+SPRING_DATASOURCE_USERNAME=postgres
+SPRING_DATASOURCE_PASSWORD=postgres
 
 # JWT
 JWT_SECRET=your-256-bit-secret-key-change-this-in-production-min-32-chars
@@ -91,7 +91,7 @@ JWT_REFRESH_EXPIRATION=604800000    # 7 dias em ms
 USER_SERVICE_URL=http://localhost:8080
 
 # Server
-PORT=8081
+PORT=8082
 
 # Logging
 LOG_LEVEL=DEBUG
@@ -218,7 +218,7 @@ Gera um novo access token usando um refresh token válido.
 
 ```bash
 # 1. Login
-curl -X POST http://localhost:8081/auth/login \
+curl -X POST http://localhost:8082/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -226,7 +226,7 @@ curl -X POST http://localhost:8081/auth/login \
   }'
 
 # 2. Validar Token
-curl -X POST http://localhost:8081/auth/validate \
+curl -X POST http://localhost:8082/auth/validate \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -d '{
@@ -234,7 +234,7 @@ curl -X POST http://localhost:8081/auth/validate \
   }'
 
 # 3. Refresh Token
-curl -X POST http://localhost:8081/auth/refresh \
+curl -X POST http://localhost:8082/auth/refresh \
   -H "Content-Type: application/json" \
   -d '{
     "refreshToken": "YOUR_REFRESH_TOKEN"
@@ -245,13 +245,13 @@ curl -X POST http://localhost:8081/auth/refresh \
 
 ```bash
 # Login
-http POST :8081/auth/login email=user@example.com password=password123
+http POST :8082/auth/login email=user@example.com password=password123
 
 # Validar Token
-http POST :8081/auth/validate token=YOUR_ACCESS_TOKEN Authorization:"Bearer YOUR_ACCESS_TOKEN"
+http POST :8082/auth/validate token=YOUR_ACCESS_TOKEN Authorization:"Bearer YOUR_ACCESS_TOKEN"
 
 # Refresh Token
-http POST :8081/auth/refresh refreshToken=YOUR_REFRESH_TOKEN
+http POST :8082/auth/refresh refreshToken=YOUR_REFRESH_TOKEN
 ```
 
 ## 🔐 Segurança
@@ -341,12 +341,12 @@ Os cenários BDD de autenticação estão em `tests/bdd/authentication.feature`.
 A documentação interativa da API está disponível via Swagger UI:
 
 ```
-http://localhost:8081/swagger-ui.html
+http://localhost:8082/swagger-ui.html
 ```
 
 OpenAPI JSON:
 ```
-http://localhost:8081/v3/api-docs
+http://localhost:8082/v3/api-docs
 ```
 
 ## 🚀 Deployment
@@ -365,8 +365,8 @@ ENTRYPOINT ["java","-jar","/app.jar"]
 docker build -t fiap-x-auth-service .
 
 # Run
-docker run -p 8081:8081 \
-  -e DB_URL=jdbc:postgresql://host.docker.internal:5432/auth_db \
+docker run -p 8082:8082 \
+  -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/auth_db \
   -e JWT_SECRET=your-secret \
   -e USER_SERVICE_URL=http://user-service:8080 \
   fiap-x-auth-service
@@ -389,11 +389,11 @@ services:
   auth-service:
     build: .
     ports:
-      - "8081:8081"
+      - "8082:8082"
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/auth_db
-      DB_USERNAME: postgres
-      DB_PASSWORD: postgres
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/auth_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
       JWT_SECRET: your-256-bit-secret
       USER_SERVICE_URL: http://user-service:8080
     depends_on:
