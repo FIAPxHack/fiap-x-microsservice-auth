@@ -1,0 +1,95 @@
+﻿name: "[Etapa 1] Pull Request"
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # 1. Build e Testes
+  build-and-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK (Temurin 17) e cache Maven
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: 'maven'
+
+      - name: Restaurar dependências (go-offline)
+        run: mvn -B -ntp dependency:go-offline -DskipTests
+
+      - name: Build e Rodar Testes
+        run: mvn -B -ntp clean verify
+
+  # 2. Análise SonarQube via Maven
+  sonarqube-analysis:
+    runs-on: ubuntu-latest
+    needs: build-and-tests
+    steps:
+      - name: Fazer checkout do repositório (com histórico completo)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar JDK (Temurin 17) e cache Maven
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: 'maven'
+
+      - name: Criar arquivo .env para Docker Compose
+        run: |
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+          echo "SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }}" >> .env
+
+      - name: Subir banco de dados PostgreSQL via Docker Compose
+        run: docker compose up -d db-fiap-x-auth
+
+      - name: Aguardar banco de dados estar pronto
+        run: |
+          timeout 60 bash -c 'until docker compose exec -T db-fiap-x-auth pg_isready -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }}; do echo "Aguardando PostgreSQL..."; sleep 3; done'
+          echo "PostgreSQL está pronto!"
+
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Executar Análise SonarQube (Maven)
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
+          SPRING_DATASOURCE_USERNAME: ${{ secrets.POSTGRES_USER }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        run: |
+          # Executa build + testes com cobertura JaCoCo
+          mvn -B -ntp clean verify
+          
+          # Executa a análise Sonar via plugin Maven (usa propriedades do pom.xml)
+          mvn -B -ntp sonar:sonar \
+            -Dsonar.token="$SONAR_TOKEN" \
+            -Dsonar.exclusions="**/target/**,**/*.class" \
+            -Dsonar.coverage.jacoco.xmlReportPaths="target/site/jacoco/jacoco.xml"
+
+      - name: Parar e remover containers
+        if: always()
+        run: docker compose down -v
+
