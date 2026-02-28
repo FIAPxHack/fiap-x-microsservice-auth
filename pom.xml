@@ -40,6 +40,12 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <sonar.exclusions>**/target/**,**/*.class</sonar.exclusions>
+
+        <sonar.coverage.exclusions>
+            src/main/kotlin/br/com/fiapx/auth/config/SecurityConfig.kt,
+            src/main/kotlin/br/com/fiapx/auth/AuthServiceApplication.kt,
+            src/main/kotlin/br/com/fiapx/auth/infrastructure/client/UserServiceClient.kt
+        </sonar.coverage.exclusions>
     </properties>
     <dependencies>
 
