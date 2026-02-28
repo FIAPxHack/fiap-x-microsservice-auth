@@ -45,11 +45,13 @@ class JwtServiceImpl(
                 .build()
                 .parseSignedClaims(token)
                 .payload
-            
+
             return mapOf(
                 "sub" to claims.subject,
-                "email" to claims["email"]!!,
-                "role" to claims["role"]!!,
+                "email" to (claims.get("email", String::class.java)
+                    ?: throw InvalidTokenException("Email ausente no token")),
+                "role" to (claims.get("role", String::class.java)
+                    ?: throw InvalidTokenException("Role ausente no token")),
                 "iat" to claims.issuedAt,
                 "exp" to claims.expiration
             )

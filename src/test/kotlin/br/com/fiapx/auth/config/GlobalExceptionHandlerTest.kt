@@ -42,7 +42,7 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
         assertNotNull(response.body)
         assertEquals(401, response.body!!.status)
-        assertEquals("[Unauthorized]", response.body!!.error)
+        assertEquals("Unauthorized", response.body!!.error)
         assertEquals("Credenciais inválidas", response.body!!.message)
         assertEquals("/auth/login", response.body!!.path)
     }
@@ -67,7 +67,7 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
         assertNotNull(response.body)
         assertEquals(401, response.body!!.status)
-        assertEquals("[Unauthorized]", response.body!!.error)
+        assertEquals("Unauthorized", response.body!!.error)
         assertEquals("Token expirou", response.body!!.message)
     }
 
@@ -90,7 +90,7 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
         assertNotNull(response.body)
         assertEquals(401, response.body!!.status)
-        assertEquals("[Unauthorized]", response.body!!.error)
+        assertEquals("Unauthorized", response.body!!.error)
         assertEquals("Token inválido", response.body!!.message)
     }
 
@@ -113,7 +113,7 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
         assertNotNull(response.body)
         assertEquals(401, response.body!!.status)
-        assertEquals("[Unauthorized]", response.body!!.error)
+        assertEquals("Unauthorized", response.body!!.error)
         assertEquals("O token foi revogado", response.body!!.message)
     }
 

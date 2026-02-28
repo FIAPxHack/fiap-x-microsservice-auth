@@ -32,7 +32,6 @@ class JwtAuthenticationFilter(
             try {
                 val claims = jwtService.validateToken(token)
 
-                val userId = claims["sub"] as String
                 val email = claims["email"] as String
                 val role = claims["role"] as String
 

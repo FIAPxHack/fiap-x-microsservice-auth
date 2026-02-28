@@ -22,7 +22,7 @@ class GlobalExceptionHandler {
         val error = ErrorResponse(
             timestamp = Instant.now().toString(),
             status = HttpStatus.UNAUTHORIZED.value(),
-            error = "[Unauthorized]",
+            error = "Unauthorized",
             message = ex.message ?: "Credenciais inválidas",
             path = request.requestURI
         )
@@ -37,7 +37,7 @@ class GlobalExceptionHandler {
         val error = ErrorResponse(
             timestamp = Instant.now().toString(),
             status = HttpStatus.UNAUTHORIZED.value(),
-            error = "[Unauthorized]",
+            error = "Unauthorized",
             message = ex.message ?: "Token expirou",
             path = request.requestURI
         )
@@ -52,7 +52,7 @@ class GlobalExceptionHandler {
         val error = ErrorResponse(
             timestamp = Instant.now().toString(),
             status = HttpStatus.UNAUTHORIZED.value(),
-            error = "[Unauthorized]",
+            error = "Unauthorized",
             message = ex.message ?: "Token inválido",
             path = request.requestURI
         )
@@ -67,7 +67,7 @@ class GlobalExceptionHandler {
         val error = ErrorResponse(
             timestamp = Instant.now().toString(),
             status = HttpStatus.UNAUTHORIZED.value(),
-            error = "[Unauthorized]",
+            error = "Unauthorized",
             message = ex.message ?: "O token foi revogado",
             path = request.requestURI
         )
