@@ -77,6 +77,12 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- JSON (Jackson) - garante ObjectMapper e auto-configuração -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-json</artifactId>
+        </dependency>
+
         <!-- WebClient for HTTP communication -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
