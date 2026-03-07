@@ -20,7 +20,7 @@ class UserServiceClient(
     override fun findByEmail(email: String): User {
         return try {
             webClient.get()
-                .uri("/users/by-email/{email}", email)
+                .uri("/api/users/by-email/{email}", email)
                 .retrieve()
                 .onStatus(
                     { it == HttpStatus.NOT_FOUND },
@@ -42,7 +42,7 @@ class UserServiceClient(
     override fun findById(id: UUID): User {
         return try {
             webClient.get()
-                .uri("/users/{id}", id)
+                .uri("/api/users/{id}", id)
                 .retrieve()
                 .onStatus(
                     { it == HttpStatus.NOT_FOUND },
