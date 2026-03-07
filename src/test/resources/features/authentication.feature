@@ -1,17 +1,17 @@
 # language: pt
-Funcionalidade: Autenticação de usuário
-  Como consumidor do microsserviço de autenticação
-  Eu quero autenticar com credenciais válidas
+Funcionalidade: Autenticacao de usuario
+  Como consumidor do microsservico de autenticacao
+  Eu quero autenticar com credenciais validas
   Para receber um token de acesso
 
-  Cenário: Autenticação bem-sucedida
-    Dado que existe um usuário cadastrado com email "usuario@fiap.com" e senha "Senha@123"
-    Quando eu envio uma requisição de autenticação com email "usuario@fiap.com" e senha "Senha@123"
-    Então o status da resposta deve ser 200
-    E a resposta deve conter um token JWT válido
+  Cenario: Autenticacao bem-sucedida
+    Dado que existe um usuario cadastrado com email "usuario@fiap.com" e senha "Senha@123"
+    Quando eu envio uma requisicao de autenticacao com email "usuario@fiap.com" e senha "Senha@123"
+    Entao o status da resposta deve ser 200
+    E a resposta deve conter um token JWT valido
 
-  Cenário: Falha de autenticação com senha inválida
-    Dado que existe um usuário cadastrado com email "usuario@fiap.com" e senha "Senha@123"
-    Quando eu envio uma requisição de autenticação com email "usuario@fiap.com" e senha "SenhaInvalida"
-    Então o status da resposta deve ser 401
-    E a resposta deve conter a mensagem "Credenciais inválidas"
+  Cenario: Falha de autenticacao com senha invalida
+    Dado que existe um usuario cadastrado com email "usuario@fiap.com" e senha "Senha@123"
+    Quando eu envio uma requisicao de autenticacao com email "usuario@fiap.com" e senha "SenhaInvalida"
+    Entao o status da resposta deve ser 401
+    E a resposta deve conter a mensagem "E-mail ou senha inválidos"

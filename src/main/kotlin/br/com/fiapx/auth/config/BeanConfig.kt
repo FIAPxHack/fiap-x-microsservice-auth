@@ -1,9 +1,5 @@
 package br.com.fiapx.auth.config
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import br.com.fiapx.auth.application.usecase.LoginUseCase
 import br.com.fiapx.auth.application.usecase.RefreshTokenUseCase
 import br.com.fiapx.auth.application.usecase.ValidateTokenUseCase
@@ -14,9 +10,14 @@ import br.com.fiapx.auth.domain.service.PasswordService
 import br.com.fiapx.auth.domain.service.UserService
 import br.com.fiapx.auth.infrastructure.jwt.JwtServiceImpl
 import br.com.fiapx.auth.infrastructure.security.PasswordServiceImpl
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
 import org.springframework.web.reactive.function.client.WebClient
 
 @Configuration
@@ -41,6 +42,7 @@ class BeanConfig {
     private var userServiceTimeout: Long = 5000
 
     @Bean
+    @Primary
     fun objectMapper(): ObjectMapper {
         return jacksonObjectMapper().apply {
             registerModule(JavaTimeModule())
