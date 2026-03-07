@@ -1,5 +1,9 @@
 package br.com.fiapx.auth.config
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import br.com.fiapx.auth.application.usecase.LoginUseCase
 import br.com.fiapx.auth.application.usecase.RefreshTokenUseCase
 import br.com.fiapx.auth.application.usecase.ValidateTokenUseCase
@@ -35,6 +39,14 @@ class BeanConfig {
     
     @Value("\${user-service.timeout:5000}")
     private var userServiceTimeout: Long = 5000
+
+    @Bean
+    fun objectMapper(): ObjectMapper {
+        return jacksonObjectMapper().apply {
+            registerModule(JavaTimeModule())
+            disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+        }
+    }
     
     @Bean
     fun jwtService(): JwtService {
