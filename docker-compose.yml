@@ -11,7 +11,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
     ports:
-      - "5432:5432"
+      - "5433:5433"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -39,7 +39,7 @@ services:
       SPRING_JPA_SHOW_SQL: "true"
       SPRING_FLYWAY_ENABLED: "true"
       SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
-      SPRING_FLYWAY_LOCATIONS: "classpath:db.migration"
+      SPRING_FLYWAY_LOCATIONS: "classpath:db/migration"
 
 volumes:
   postgres_data:
