@@ -1,3 +1,4 @@
+# language: pt
 Funcionalidade: Autenticação de usuário
   Como consumidor do microsserviço de autenticação
   Eu quero autenticar com credenciais válidas
