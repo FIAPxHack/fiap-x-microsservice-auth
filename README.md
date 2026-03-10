@@ -88,7 +88,7 @@ JWT_ACCESS_EXPIRATION=900000        # 15 minutos em ms
 JWT_REFRESH_EXPIRATION=604800000    # 7 dias em ms
 
 # User Service
-USER_SERVICE_URL=http://localhost:8080
+USER_SERVICE_URL=http://localhost:8081
 
 # Server
 PORT=8082
@@ -122,7 +122,7 @@ mvn test
 mvn spring-boot:run
 
 # Ou usando variáveis de ambiente
-JWT_SECRET=my-secret USER_SERVICE_URL=http://localhost:8080 mvn spring-boot:run
+JWT_SECRET=my-secret USER_SERVICE_URL=http://localhost:8081 mvn spring-boot:run
 ```
 
 ## 📡 API Endpoints
@@ -368,7 +368,7 @@ docker build -t fiap-x-auth-service .
 docker run -p 8082:8082 \
   -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/auth_db \
   -e JWT_SECRET=your-secret \
-  -e USER_SERVICE_URL=http://user-service:8080 \
+  -e USER_SERVICE_URL=http://user-service:8081 \
   fiap-x-auth-service
 ```
 
@@ -395,7 +395,7 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       JWT_SECRET: your-256-bit-secret
-      USER_SERVICE_URL: http://user-service:8080
+      USER_SERVICE_URL: http://user-service:8081
     depends_on:
       - postgres
 ```
