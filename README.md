@@ -400,6 +400,130 @@ services:
       - postgres
 ```
 
+## ☁️ Execução em AWS Lambda + API Gateway
+
+Este projeto agora também pode ser empacotado para AWS Lambda no modelo **API Gateway -> Lambda -> Spring Boot**.
+
+### O que foi adicionado
+
+- Handler Lambda em `src/main/kotlin/br/com/fiapx/auth/lambda/LambdaHandler.kt`
+- Perfil serverless em `src/main/resources/application-lambda.yml`
+- Dependências AWS Lambda no `pom.xml`
+- Empacotamento com classifier `aws` para publicação da função
+
+### Handler da função
+
+Configure a Lambda com o seguinte handler:
+
+`br.com.fiapx.auth.lambda.LambdaHandler`
+
+### Perfil Spring recomendado
+
+Defina a variável abaixo na Lambda:
+
+```text
+SPRING_PROFILES_ACTIVE=lambda
+```
+
+Esse perfil aplica ajustes para ambiente serverless:
+
+- desabilita Flyway em runtime
+- reduz pool de conexões
+- desabilita Swagger UI
+- reduz verbosidade de logs
+- ativa lazy initialization
+
+### Variáveis de ambiente mínimas
+
+```text
+SPRING_PROFILES_ACTIVE=lambda
+SPRING_DATASOURCE_URL=jdbc:postgresql://<rds-endpoint>:5432/auth_db
+SPRING_DATASOURCE_USERNAME=<usuario>
+SPRING_DATASOURCE_PASSWORD=<senha>
+JWT_SECRET=<segredo-forte-com-32+-chars>
+JWT_ACCESS_EXPIRATION=900000
+JWT_REFRESH_EXPIRATION=604800000
+USER_SERVICE_URL=https://<url-do-user-service>
+USER_SERVICE_TIMEOUT=5000
+DB_MAX_POOL_SIZE=2
+DB_MIN_IDLE=0
+DB_IDLE_TIMEOUT=10000
+DB_MAX_LIFETIME=30000
+DB_CONNECTION_TIMEOUT=5000
+LOG_LEVEL=INFO
+SECURITY_LOG_LEVEL=WARN
+```
+
+### Banco de dados no ambiente Lambda
+
+Para este serviço, o banco precisa estar pronto **antes** da Lambda iniciar.
+
+Use as migrations já existentes:
+
+- `src/main/resources/db/migration/V1__create_refresh_tokens.sql`
+- `src/main/resources/db/migration/V2__create_login_attempts.sql`
+
+Recomendação operacional:
+
+- rode Flyway no pipeline de deploy, não no cold start da Lambda
+- use PostgreSQL em RDS/Aurora
+- prefira RDS Proxy se houver concorrência maior
+- mantenha a Lambda na VPC correta para acessar o banco
+
+### Build para Lambda
+
+Gere o artefato sombreado para publicação:
+
+```powershell
+mvn clean package -Plambda -DskipTests
+```
+
+Artefato esperado:
+
+```text
+target/fiap-x-microsservice-auth-0.0.1-SNAPSHOT-aws.jar
+```
+
+### Build local tradicional
+
+A execução local do serviço continua a mesma:
+
+```powershell
+mvn spring-boot:run
+```
+
+### Configuração recomendada da função AWS Lambda
+
+- Runtime: **Java 17**
+- Memória inicial sugerida: **1024 MB** a **1536 MB**
+- Timeout inicial sugerido: **20 a 30 segundos**
+- Handler: `br.com.fiapx.auth.lambda.LambdaHandler`
+- Arquitetura: `x86_64` ou `arm64` conforme sua base AWS
+
+### Integração com API Gateway
+
+Como o API Gateway está em outro projeto, este serviço só precisa expor a Lambda HTTP.
+
+Mapeie no API Gateway as rotas para a função, por exemplo:
+
+- `POST /auth/login`
+- `POST /auth/validate`
+- `POST /auth/refresh`
+
+O API Gateway deve encaminhar:
+
+- body JSON
+- headers originais, especialmente `Authorization` e `X-Forwarded-For`
+- método HTTP correto
+- path sem reescrita inesperada
+
+### Observações importantes
+
+- `HttpServletRequest` continua sendo usado no controller para capturar IP do cliente; em produção, valide se o API Gateway está repassando `X-Forwarded-For`.
+- Se a tabela `login_attempts` ou `refresh_tokens` não existir, a Lambda falhará na inicialização do contexto JPA.
+- O projeto continua apto para execução local e também para empacotamento serverless.
+- Se você notar cold start alto, os primeiros ajustes devem ser: memória maior, Flyway fora da Lambda e revisão de integrações externas.
+
 ## 📝 Licença
 
 Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.

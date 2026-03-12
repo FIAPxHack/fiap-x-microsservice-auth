@@ -2,6 +2,8 @@ server:
   port: ${PORT:8082}
 
 spring:
+  profiles:
+    default: local
   application:
     name: fiap-x-microservice-auth
   
