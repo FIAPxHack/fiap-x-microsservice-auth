@@ -67,7 +67,11 @@ management:
 # Logging
 logging:
   level:
+    file:
+      name: /app/logs/fiap-x-auth.log
     root: ${LOGGING_LEVEL_ROOT:INFO}
     org.hibernate.SQL: ${LOGGING_LEVEL_SQL:INFO}
     org.springframework.web: ${LOGGING_LEVEL_SPRING:INFO}
     br.com.fiapx.auth: ${LOGGING_LEVEL_FIAP_X_AUTH:DEBUG}
+    br.com.fiapx.auth.application.usecase: DEBUG
+    br.com.fiapx.auth.infrastructure.client: DEBUG

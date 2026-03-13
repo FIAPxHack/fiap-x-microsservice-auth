@@ -53,7 +53,7 @@ class UserServiceClient(
     }
     
     override fun findById(id: UUID): User {
-        logger.debug("[USER_SERVICE_CLIENT]   iniciando busca de usuário por ID id={}", id)
+        logger.debug("[USER_SERVICE_CLIENT] iniciando busca de usuário por ID id={}", id)
         return try {
             val user = webClient.get()
                 .uri("/api/users/{id}", id)
