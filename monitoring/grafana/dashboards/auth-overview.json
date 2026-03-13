@@ -1,0 +1,101 @@
+{
+  "annotations": {"list": [{"builtIn": 1, "datasource": {"type": "grafana", "uid": "-- Grafana --"}, "enable": true, "hide": true, "iconColor": "rgba(0, 211, 255, 1)", "name": "Annotations & Alerts", "type": "dashboard"}]},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]}, "unit": "short"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"editorMode": "code", "expr": "sum(rate(http_server_requests_seconds_count{application=\"fiap-x-microservice-auth\"}[5m]))", "legendFormat": "req/s", "range": true, "refId": "A"}],
+      "title": "Requests por segundo",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 0.5}, {"color": "red", "value": 1}]}, "unit": "short"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0},
+      "id": 2,
+      "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"editorMode": "code", "expr": "sum(rate(http_server_requests_seconds_count{application=\"fiap-x-microservice-auth\",status=~\"5..\"}[5m]))", "legendFormat": "5xx/s", "range": true, "refId": "A"}],
+      "title": "Taxa de erro 5xx",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "s"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0},
+      "id": 3,
+      "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"editorMode": "code", "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=\"fiap-x-microservice-auth\"}[5m])) by (le))", "legendFormat": "p95", "range": true, "refId": "A"}],
+      "title": "Latência HTTP p95",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "percentunit"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0},
+      "id": 4,
+      "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"editorMode": "code", "expr": "sum(jvm_memory_used_bytes{application=\"fiap-x-microservice-auth\",area=\"heap\"}) / sum(jvm_memory_max_bytes{application=\"fiap-x-microservice-auth\",area=\"heap\"})", "legendFormat": "heap", "range": true, "refId": "A"}],
+      "title": "Uso de heap",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8},
+      "id": 5,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single", "sort": "none"}},
+      "targets": [
+        {"editorMode": "code", "expr": "rate(auth_login_attempts_total{application=\"fiap-x-microservice-auth\",outcome=\"success\"}[5m])", "legendFormat": "sucesso", "range": true, "refId": "A"},
+        {"editorMode": "code", "expr": "rate(auth_login_attempts_total{application=\"fiap-x-microservice-auth\",outcome=\"failure\"}[5m])", "legendFormat": "falha", "range": true, "refId": "B"}
+      ],
+      "title": "Login por resultado",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8},
+      "id": 6,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single", "sort": "none"}},
+      "targets": [
+        {"editorMode": "code", "expr": "rate(auth_refresh_token_requests_total{application=\"fiap-x-microservice-auth\",outcome=\"success\"}[5m])", "legendFormat": "refresh sucesso", "range": true, "refId": "A"},
+        {"editorMode": "code", "expr": "rate(auth_refresh_token_requests_total{application=\"fiap-x-microservice-auth\",outcome=\"failure\"}[5m])", "legendFormat": "refresh falha", "range": true, "refId": "B"}
+      ],
+      "title": "Refresh token por resultado",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}, "unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8},
+      "id": 7,
+      "options": {"legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single", "sort": "none"}},
+      "targets": [
+        {"editorMode": "code", "expr": "rate(auth_validate_token_requests_total{application=\"fiap-x-microservice-auth\",outcome=\"success\"}[5m])", "legendFormat": "validate sucesso", "range": true, "refId": "A"},
+        {"editorMode": "code", "expr": "rate(auth_validate_token_requests_total{application=\"fiap-x-microservice-auth\",outcome=\"failure\"}[5m])", "legendFormat": "validate falha", "range": true, "refId": "B"}
+      ],
+      "title": "Validate token por resultado",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["fiapx", "auth", "prometheus"],
+  "templating": {"list": []},
+  "time": {"from": "now-15m", "to": "now"},
+  "timepicker": {},
+  "timezone": "",
+  "title": "FIAP-X Auth Overview",
+  "uid": "fiapx-auth-overview",
+  "version": 1,
+  "weekStart": ""
+}
+

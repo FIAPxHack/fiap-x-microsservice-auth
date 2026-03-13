@@ -1,5 +1,6 @@
 package br.com.fiapx.auth.application.usecase
 
+import br.com.fiapx.auth.config.AuthMetrics
 import br.com.fiapx.auth.domain.exception.InvalidTokenException
 import br.com.fiapx.auth.domain.exception.TokenExpiredException
 import br.com.fiapx.auth.domain.exception.TokenRevokedException
@@ -20,21 +21,33 @@ class RefreshTokenUseCase(
     private val userService: UserService,
     private val jwtService: JwtService,
     private val refreshTokenExpirationMs: Long,
-    private val enableTokenRotation: Boolean = true
+    private val enableTokenRotation: Boolean = true,
+    private val authMetrics: AuthMetrics? = null
 ) {
     
     fun execute(input: RefreshTokenInput): RefreshTokenOutput {
+        return authMetrics?.refreshTimer?.recordCallable<RefreshTokenOutput> {
+            executeInternal(input)
+        } ?: executeInternal(input)
+    }
+
+    private fun executeInternal(input: RefreshTokenInput): RefreshTokenOutput {
         // Find refresh token
         val refreshToken = refreshTokenRepository.findByToken(input.refreshToken)
-            ?: throw InvalidTokenException("Refresh token not found")
-        
+            ?: run {
+                authMetrics?.refreshFailureCounter?.increment()
+                throw InvalidTokenException("Refresh token not found")
+            }
+
         // Check if token is revoked
         if (refreshToken.revoked) {
+            authMetrics?.refreshFailureCounter?.increment()
             throw TokenRevokedException("Refresh token has been revoked")
         }
         
         // Check if token has expired
         if (refreshToken.expiresAt.isBefore(Instant.now())) {
+            authMetrics?.refreshFailureCounter?.increment()
             throw TokenExpiredException("Refresh token has expired")
         }
         
@@ -66,6 +79,8 @@ class RefreshTokenUseCase(
             input.refreshToken
         }
         
+        authMetrics?.refreshSuccessCounter?.increment()
+
         return RefreshTokenOutput(
             accessToken = newAccessToken,
             refreshToken = newRefreshToken,

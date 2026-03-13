@@ -1,5 +1,6 @@
 package br.com.fiapx.auth.application.usecase
 
+import br.com.fiapx.auth.config.AuthMetrics
 import br.com.fiapx.auth.domain.exception.InvalidCredentialsException
 import br.com.fiapx.auth.domain.model.LoginAttempt
 import br.com.fiapx.auth.domain.model.RefreshToken
@@ -22,10 +23,17 @@ class LoginUseCase(
     private val refreshTokenRepository: RefreshTokenRepository,
     private val loginAttemptRepository: LoginAttemptRepository,
     private val accessTokenExpirationMs: Long,
-    private val refreshTokenExpirationMs: Long
+    private val refreshTokenExpirationMs: Long,
+    private val authMetrics: AuthMetrics? = null
 ) {
     
     fun execute(input: LoginInput): LoginOutput {
+        return authMetrics?.loginTimer?.recordCallable<LoginOutput> {
+            executeInternal(input)
+        } ?: executeInternal(input)
+    }
+
+    private fun executeInternal(input: LoginInput): LoginOutput {
         val user = userService.findByEmail(input.email)
 
         val passwordMatches = passwordService.matches(input.password, user.passwordHash)
@@ -40,6 +48,7 @@ class LoginUseCase(
         loginAttemptRepository.save(loginAttempt)
 
         if (!passwordMatches) {
+            authMetrics?.loginFailureCounter?.increment()
             throw InvalidCredentialsException("[LOGIN_USE_CASE] E-mail ou senha inválidos")
         }
 
@@ -55,7 +64,8 @@ class LoginUseCase(
             createdAt = Instant.now()
         )
         refreshTokenRepository.save(refreshToken)
-        
+        authMetrics?.loginSuccessCounter?.increment()
+
         return LoginOutput(
             accessToken = accessToken,
             refreshToken = refreshTokenValue,

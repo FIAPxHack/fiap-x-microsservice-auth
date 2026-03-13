@@ -1,5 +1,6 @@
 package br.com.fiapx.auth.application.usecase
 
+import br.com.fiapx.auth.config.AuthMetrics
 import br.com.fiapx.auth.domain.service.JwtService
 import java.util.UUID
 
@@ -7,12 +8,26 @@ import java.util.UUID
  * Valida o token e extrai reivindicações.
  */
 class ValidateTokenUseCase(
-    private val jwtService: JwtService
+    private val jwtService: JwtService,
+    private val authMetrics: AuthMetrics? = null
 ) {
     
     fun execute(input: ValidateTokenInput): ValidateTokenOutput {
-        val claims = jwtService.validateToken(input.token)
-        
+        return authMetrics?.validateTimer?.recordCallable<ValidateTokenOutput> {
+            executeInternal(input)
+        } ?: executeInternal(input)
+    }
+
+    private fun executeInternal(input: ValidateTokenInput): ValidateTokenOutput {
+        val claims = try {
+            jwtService.validateToken(input.token)
+        } catch (ex: Exception) {
+            authMetrics?.validateFailureCounter?.increment()
+            throw ex
+        }
+
+        authMetrics?.validateSuccessCounter?.increment()
+
         return ValidateTokenOutput(
             valid = true,
             userId = UUID.fromString(claims["sub"] as String),

@@ -77,7 +77,8 @@ class BeanConfig {
         passwordService: PasswordService,
         jwtService: JwtService,
         refreshTokenRepository: RefreshTokenRepository,
-        loginAttemptRepository: LoginAttemptRepository
+        loginAttemptRepository: LoginAttemptRepository,
+        authMetrics: AuthMetrics
     ): LoginUseCase {
         return LoginUseCase(
             userService = userService,
@@ -86,27 +87,36 @@ class BeanConfig {
             refreshTokenRepository = refreshTokenRepository,
             loginAttemptRepository = loginAttemptRepository,
             accessTokenExpirationMs = accessTokenExpiration,
-            refreshTokenExpirationMs = refreshTokenExpiration
+            refreshTokenExpirationMs = refreshTokenExpiration,
+            authMetrics = authMetrics
         )
     }
     
     @Bean
-    fun validateTokenUseCase(jwtService: JwtService): ValidateTokenUseCase {
-        return ValidateTokenUseCase(jwtService)
+    fun validateTokenUseCase(
+        jwtService: JwtService,
+        authMetrics: AuthMetrics
+    ): ValidateTokenUseCase {
+        return ValidateTokenUseCase(
+            jwtService = jwtService,
+            authMetrics = authMetrics
+        )
     }
     
     @Bean
     fun refreshTokenUseCase(
         refreshTokenRepository: RefreshTokenRepository,
         userService: UserService,
-        jwtService: JwtService
+        jwtService: JwtService,
+        authMetrics: AuthMetrics
     ): RefreshTokenUseCase {
         return RefreshTokenUseCase(
             refreshTokenRepository = refreshTokenRepository,
             userService = userService,
             jwtService = jwtService,
             refreshTokenExpirationMs = refreshTokenExpiration,
-            enableTokenRotation = true
+            enableTokenRotation = true,
+            authMetrics = authMetrics
         )
     }
 }

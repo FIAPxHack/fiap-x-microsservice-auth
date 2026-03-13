@@ -23,10 +23,12 @@ import org.springframework.test.util.ReflectionTestUtils
 class BeanConfigTest {
 
     private lateinit var beanConfig: BeanConfig
+    private lateinit var authMetrics: AuthMetrics
 
     @BeforeEach
     fun setup() {
         beanConfig = BeanConfig()
+        authMetrics = mockk(relaxed = true)
         ReflectionTestUtils.setField(beanConfig, "jwtSecret", "test-secret-key-must-be-at-least-256-bits-long-for-hs256")
         ReflectionTestUtils.setField(beanConfig, "accessTokenExpiration", 900000L)
         ReflectionTestUtils.setField(beanConfig, "refreshTokenExpiration", 604800000L)
@@ -69,7 +71,7 @@ class BeanConfigTest {
         val loginAttemptRepository = mockk<LoginAttemptRepository>()
 
         val loginUseCase = beanConfig.loginUseCase(
-            userService, passwordService, jwtService, refreshTokenRepository, loginAttemptRepository
+            userService, passwordService, jwtService, refreshTokenRepository, loginAttemptRepository, authMetrics
         )
         assertNotNull(loginUseCase)
         assertTrue(loginUseCase is LoginUseCase)
@@ -78,7 +80,7 @@ class BeanConfigTest {
     @Test
     fun `validateTokenUseCase should be created with jwtService`() {
         val jwtService = mockk<JwtService>()
-        val validateTokenUseCase = beanConfig.validateTokenUseCase(jwtService)
+        val validateTokenUseCase = beanConfig.validateTokenUseCase(jwtService, authMetrics)
         assertNotNull(validateTokenUseCase)
         assertTrue(validateTokenUseCase is ValidateTokenUseCase)
     }
@@ -90,7 +92,7 @@ class BeanConfigTest {
         val jwtService = mockk<JwtService>()
 
         val refreshTokenUseCase = beanConfig.refreshTokenUseCase(
-            refreshTokenRepository, userService, jwtService
+            refreshTokenRepository, userService, jwtService, authMetrics
         )
         assertNotNull(refreshTokenUseCase)
         assertTrue(refreshTokenUseCase is RefreshTokenUseCase)
