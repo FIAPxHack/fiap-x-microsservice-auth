@@ -16,4 +16,5 @@ scrape_configs:
         labels:
           job: fiap-x-auth
           service: auth
+          application: fiap-x-microservice-auth
           __path__: /var/log/app/*.log

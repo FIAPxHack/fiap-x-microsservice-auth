@@ -66,9 +66,9 @@ management:
 
 # Logging
 logging:
+  file:
+    name: ${LOG_FILE_PATH:/app/logs/fiap-x-auth.log}
   level:
-    file:
-      name: /app/logs/fiap-x-auth.log
     root: ${LOGGING_LEVEL_ROOT:INFO}
     org.hibernate.SQL: ${LOGGING_LEVEL_SQL:INFO}
     org.springframework.web: ${LOGGING_LEVEL_SPRING:INFO}

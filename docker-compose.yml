@@ -53,6 +53,9 @@ services:
     restart: unless-stopped
     ports:
       - "9090:9090"
+    depends_on:
+      app-fiap-x-auth:
+        condition: service_started
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
@@ -74,11 +77,14 @@ services:
       retries: 10
 
   promtail:
-    image: grafana/promtail:2.9.0
+    image: grafana/promtail:3.0.0
     container_name: fiap-x-auth-promtail
     restart: unless-stopped
     depends_on:
-      - loki
+      loki:
+        condition: service_healthy
+      app-fiap-x-auth:
+        condition: service_started
     volumes:
       - ./monitoring/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
       - app_logs:/var/log/app:ro

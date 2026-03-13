@@ -1,3 +1,4 @@
+
 # Etapa 1 -> Base (Runtime)
 FROM eclipse-temurin:17-jre-alpine AS base
 WORKDIR /app
@@ -20,6 +21,9 @@ RUN mvn clean package -DskipTests -B
 # Etapa 3 -> Final
 FROM base AS final
 WORKDIR /app
+
+# Cria diretório para logs
+RUN mkdir -p /app/logs
 
 # Copia o jar gerado
 COPY --from=build /src/target/*.jar app.jar
