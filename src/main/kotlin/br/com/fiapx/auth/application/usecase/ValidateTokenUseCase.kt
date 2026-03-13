@@ -3,6 +3,7 @@ package br.com.fiapx.auth.application.usecase
 import br.com.fiapx.auth.config.AuthMetrics
 import br.com.fiapx.auth.domain.service.JwtService
 import java.util.UUID
+import org.slf4j.LoggerFactory
 
 /**
  * Valida o token e extrai reivindicações.
@@ -11,6 +12,7 @@ class ValidateTokenUseCase(
     private val jwtService: JwtService,
     private val authMetrics: AuthMetrics? = null
 ) {
+    private val logger = LoggerFactory.getLogger(ValidateTokenUseCase::class.java)
     
     fun execute(input: ValidateTokenInput): ValidateTokenOutput {
         return authMetrics?.validateTimer?.recordCallable<ValidateTokenOutput> {
@@ -19,13 +21,22 @@ class ValidateTokenUseCase(
     }
 
     private fun executeInternal(input: ValidateTokenInput): ValidateTokenOutput {
+        logger.debug("[VALIDATE_TOKEN_USE_CASE] iniciando validação do token (tokenLength={})", input.token.length)
+
         val claims = try {
             jwtService.validateToken(input.token)
         } catch (ex: Exception) {
+            logger.debug("[VALIDATE_TOKEN_USE_CASE] falha na validação do token", ex)
             authMetrics?.validateFailureCounter?.increment()
             throw ex
         }
 
+        logger.debug(
+            "[VALIDATE_TOKEN_USE_CASE] token validado com sucesso sub={} email={} role={}",
+            claims["sub"],
+            claims["email"],
+            claims["role"]
+        )
         authMetrics?.validateSuccessCounter?.increment()
 
         return ValidateTokenOutput(
