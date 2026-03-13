@@ -40,6 +40,13 @@ services:
       SPRING_FLYWAY_ENABLED: "true"
       SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
       SPRING_FLYWAY_LOCATIONS: "classpath:db/migration"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus"
+      MANAGEMENT_PROMETHEUS_METRICS_EXPORT_ENABLED: "true"
+      LOG_FILE_PATH: "/app/logs/fiap-x-auth.log"
+      ENVIRONMENT: ${ENVIRONMENT:-local}
+    volumes:
+      - app_logs:/app/logs
 
 volumes:
   postgres_data:
+  app_logs:

@@ -13,7 +13,7 @@ spring:
   
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     show-sql: ${SHOW_SQL:false}
     properties:
       hibernate:
@@ -52,17 +52,22 @@ management:
       show-details: always
       probes:
         enabled: true
+    prometheus:
+      access: unrestricted
   metrics:
     tags:
       application: ${spring.application.name}
       environment: ${ENVIRONMENT:local}
       team: ${METRICS_TEAM:fiapx}
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 
 # Logging
 logging:
   level:
     root: ${LOGGING_LEVEL_ROOT:INFO}
-    br.com.fiapx: ${LOG_LEVEL:DEBUG}
     org.hibernate.SQL: ${LOGGING_LEVEL_SQL:INFO}
-    org.springframework.security: ${SECURITY_LOG_LEVEL:DEBUG}
-    br.com.fiapx.fiapxauth: ${LOGGING_LEVEL_FIAP_X_USER:DEBUG}
+    org.springframework.web: ${LOGGING_LEVEL_SPRING:INFO}
+    br.com.fiapx.auth: ${LOGGING_LEVEL_FIAP_X_AUTH:DEBUG}

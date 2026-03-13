@@ -1,5 +1,6 @@
 server:
   http_listen_port: 9080
+  grpc_listen_port: 0
 
 positions:
   filename: /tmp/positions.yaml
@@ -8,11 +9,11 @@ clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-
-  - job_name: application_logs
+  - job_name: fiap-x-auth-logs
     static_configs:
       - targets:
           - localhost
         labels:
-          job: kotlin-app
-          __path__: /var/log/*.log
+          job: fiap-x-auth
+          service: auth
+          __path__: /var/log/app/*.log

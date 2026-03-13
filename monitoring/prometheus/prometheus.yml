@@ -6,12 +6,17 @@ rule_files:
   - /etc/prometheus/alerts.yml
 
 scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - localhost:9090
+
   - job_name: auth-service
     metrics_path: /actuator/prometheus
+    scrape_interval: 15s
     static_configs:
       - targets:
           - host.docker.internal:8082
         labels:
           application: fiap-x-microservice-auth
           environment: local
-
