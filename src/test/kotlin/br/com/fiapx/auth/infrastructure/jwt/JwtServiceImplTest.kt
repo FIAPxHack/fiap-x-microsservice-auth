@@ -2,10 +2,13 @@ package br.com.fiapx.auth.infrastructure.jwt
 
 import br.com.fiapx.auth.domain.exception.InvalidTokenException
 import br.com.fiapx.auth.domain.exception.TokenExpiredException
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.security.Keys
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.util.Date
 import java.util.UUID
 
 /**
@@ -216,4 +219,96 @@ class JwtServiceImplTest {
         // If issuer doesn't match, validation would fail
         assertNotNull(claims)
     }
+
+    @Test
+    fun `should throw InvalidTokenException when token is signed with different secret`() {
+        // Given - token generated with a different secret
+        val differentSecretService = JwtServiceImpl(
+            secret = "different-secret-key-must-be-at-least-256-bits-long-hs256",
+            accessTokenExpirationMs = accessTokenExpirationMs,
+            issuer = issuer
+        )
+        val token = differentSecretService.generateAccessToken(UUID.randomUUID(), "user@example.com", "USER")
+
+        // When & Then - our service should reject the token
+        assertThrows<InvalidTokenException> {
+            jwtService.validateToken(token)
+        }
+    }
+
+    @Test
+    fun `should throw InvalidTokenException when email claim is missing from token`() {
+        // Given - build a token without the email claim
+        val secretKey = Keys.hmacShaKeyFor(secret.toByteArray())
+        val now = Date()
+        val token = Jwts.builder()
+            .subject(UUID.randomUUID().toString())
+            .claim("role", "USER")
+            .issuedAt(now)
+            .expiration(Date(now.time + accessTokenExpirationMs))
+            .issuer(issuer)
+            .signWith(secretKey)
+            .compact()
+
+        // When & Then
+        assertThrows<InvalidTokenException> {
+            jwtService.validateToken(token)
+        }
+    }
+
+    @Test
+    fun `should throw InvalidTokenException when role claim is missing from token`() {
+        // Given - build a token without the role claim
+        val secretKey = Keys.hmacShaKeyFor(secret.toByteArray())
+        val now = Date()
+        val token = Jwts.builder()
+            .subject(UUID.randomUUID().toString())
+            .claim("email", "user@example.com")
+            .issuedAt(now)
+            .expiration(Date(now.time + accessTokenExpirationMs))
+            .issuer(issuer)
+            .signWith(secretKey)
+            .compact()
+
+        // When & Then
+        assertThrows<InvalidTokenException> {
+            jwtService.validateToken(token)
+        }
+    }
+
+    @Test
+    fun `should throw InvalidTokenException when extractUserId is called with malformed token`() {
+        // Given
+        val malformedToken = "not.a.valid.jwt"
+
+        // When & Then
+        assertThrows<InvalidTokenException> {
+            jwtService.extractUserId(malformedToken)
+        }
+    }
+
+    @Test
+    fun `should throw InvalidTokenException when extractEmail is called with malformed token`() {
+        // Given
+        val malformedToken = "not.a.valid.jwt"
+
+        // When & Then
+        assertThrows<InvalidTokenException> {
+            jwtService.extractEmail(malformedToken)
+        }
+    }
+
+    @Test
+    fun `should throw InvalidTokenException when extractRole is called with malformed token`() {
+        // Given
+        val malformedToken = "not.a.valid.jwt"
+
+        // When & Then
+        assertThrows<InvalidTokenException> {
+            jwtService.extractRole(malformedToken)
+        }
+    }
 }
+
+
+

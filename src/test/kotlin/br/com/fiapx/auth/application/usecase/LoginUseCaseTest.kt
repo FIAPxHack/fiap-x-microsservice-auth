@@ -1,5 +1,6 @@
 package br.com.fiapx.auth.application.usecase
 
+import br.com.fiapx.auth.config.AuthMetrics
 import br.com.fiapx.auth.domain.exception.InvalidCredentialsException
 import br.com.fiapx.auth.domain.exception.UserNotFoundException
 import br.com.fiapx.auth.domain.model.LoginAttempt
@@ -10,6 +11,7 @@ import br.com.fiapx.auth.domain.repository.RefreshTokenRepository
 import br.com.fiapx.auth.domain.service.JwtService
 import br.com.fiapx.auth.domain.service.PasswordService
 import br.com.fiapx.auth.domain.service.UserService
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.*
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
@@ -188,7 +190,7 @@ class LoginUseCaseTest {
         val input = LoginUseCase.LoginInput(email, password, ipAddress)
         try {
             loginUseCase.execute(input)
-        } catch (e: InvalidCredentialsException) {
+        } catch (_: InvalidCredentialsException) {
             // Expected
         }
         
@@ -227,4 +229,73 @@ class LoginUseCaseTest {
         assertTrue(token.expiresAt.isAfter(Instant.now()))
         assertTrue(token.expiresAt.isBefore(Instant.now().plusMillis(refreshTokenExpirationMs + 1000)))
     }
+
+    @Test
+    fun `should login successfully through metrics timer when authMetrics is provided`() {
+        // Given
+        val email = "user@example.com"
+        val password = "password123"
+        val userId = UUID.randomUUID()
+        val user = User(id = userId, email = email, passwordHash = "hashedPassword", role = "USER")
+        val accessToken = "access.token.here"
+        val refreshTokenValue = "refresh-token-uuid"
+
+        val authMetrics = AuthMetrics(SimpleMeterRegistry())
+        val useCaseWithMetrics = LoginUseCase(
+            userService = userService,
+            passwordService = passwordService,
+            jwtService = jwtService,
+            refreshTokenRepository = refreshTokenRepository,
+            loginAttemptRepository = loginAttemptRepository,
+            accessTokenExpirationMs = accessTokenExpirationMs,
+            refreshTokenExpirationMs = refreshTokenExpirationMs,
+            authMetrics = authMetrics
+        )
+
+        every { userService.findByEmail(email) } returns user
+        every { passwordService.matches(password, user.passwordHash) } returns true
+        every { jwtService.generateAccessToken(userId, email, "USER") } returns accessToken
+        every { jwtService.generateRefreshToken() } returns refreshTokenValue
+        every { loginAttemptRepository.save(any()) } returns mockk()
+        every { refreshTokenRepository.save(any()) } returns mockk()
+
+        // When
+        val output = useCaseWithMetrics.execute(LoginUseCase.LoginInput(email, password, "127.0.0.1"))
+
+        // Then
+        assertEquals(accessToken, output.accessToken)
+        assertEquals(refreshTokenValue, output.refreshToken)
+        assertEquals("Bearer", output.tokenType)
+    }
+
+    @Test
+    fun `should increment loginFailureCounter when authMetrics is provided and password is wrong`() {
+        // Given
+        val email = "user@example.com"
+        val password = "wrongPassword"
+        val userId = UUID.randomUUID()
+        val user = User(id = userId, email = email, passwordHash = "hashedPassword", role = "USER")
+
+        val authMetrics = AuthMetrics(SimpleMeterRegistry())
+        val useCaseWithMetrics = LoginUseCase(
+            userService = userService,
+            passwordService = passwordService,
+            jwtService = jwtService,
+            refreshTokenRepository = refreshTokenRepository,
+            loginAttemptRepository = loginAttemptRepository,
+            accessTokenExpirationMs = accessTokenExpirationMs,
+            refreshTokenExpirationMs = refreshTokenExpirationMs,
+            authMetrics = authMetrics
+        )
+
+        every { userService.findByEmail(email) } returns user
+        every { passwordService.matches(password, user.passwordHash) } returns false
+        every { loginAttemptRepository.save(any()) } returns mockk()
+
+        // When & Then
+        assertThrows<InvalidCredentialsException> {
+            useCaseWithMetrics.execute(LoginUseCase.LoginInput(email, password, "127.0.0.1"))
+        }
+    }
 }
+
