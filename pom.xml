@@ -42,6 +42,7 @@
         <sonar.exclusions>**/target/**,**/*.class</sonar.exclusions>
 
         <sonar.coverage.exclusions>
+            src/main/kotlin/br/com/fiapx/auth/config/MetricsConfig.kt,
             src/main/kotlin/br/com/fiapx/auth/config/BeanConfig.kt,
             src/main/kotlin/br/com/fiapx/auth/config/SecurityConfig.kt,
             src/main/kotlin/br/com/fiapx/auth/AuthServiceApplication.kt,
