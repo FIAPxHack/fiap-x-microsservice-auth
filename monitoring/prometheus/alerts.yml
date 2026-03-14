@@ -1,0 +1,30 @@
+groups:
+  - name: auth-service-alerts
+    rules:
+      - alert: AuthServiceDown
+        expr: up{job="auth-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Auth service indisponível"
+          description: "O endpoint /actuator/prometheus do auth service não respondeu por mais de 1 minuto."
+
+      - alert: AuthHigh5xxRate
+        expr: sum(rate(http_server_requests_seconds_count{job="auth-service",status=~"5.."}[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Auth service com taxa alta de 5xx"
+          description: "O auth service está retornando mais de 1 resposta 5xx por segundo nos últimos 5 minutos."
+
+      - alert: AuthHighJvmHeapUsage
+        expr: (jvm_memory_used_bytes{job="auth-service",area="heap"} / jvm_memory_max_bytes{job="auth-service",area="heap"}) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Auth service com uso alto de heap"
+          description: "A heap JVM do auth service está acima de 85% por mais de 5 minutos."
+

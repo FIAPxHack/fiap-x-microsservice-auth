@@ -8,6 +8,7 @@ Microsserviço de autenticação construído com Kotlin, Spring Boot, e Clean Ar
 - [Arquitetura](#arquitetura)
 - [Tecnologias](#tecnologias)
 - [Configuração](#configuração)
+- [Monitoramento](#monitoramento)
 - [API Endpoints](#api-endpoints)
 - [Exemplos de Uso](#exemplos-de-uso)
 - [Testes](#testes)
@@ -93,6 +94,10 @@ USER_SERVICE_URL=http://localhost:8081
 # Server
 PORT=8082
 
+# Observabilidade
+ENVIRONMENT=local
+METRICS_TEAM=fiapx
+
 # Logging
 LOG_LEVEL=DEBUG
 SECURITY_LOG_LEVEL=DEBUG
@@ -124,6 +129,78 @@ mvn spring-boot:run
 # Ou usando variáveis de ambiente
 JWT_SECRET=my-secret USER_SERVICE_URL=http://localhost:8081 mvn spring-boot:run
 ```
+
+## 📈 Monitoramento
+
+A aplicação agora expõe métricas no endpoint `GET /actuator/prometheus` usando `Spring Boot Actuator + Micrometer + Prometheus`.
+
+### Melhor abordagem adotada
+
+- instrumentação no próprio serviço para métricas técnicas e de negócio
+- coleta centralizada por um Prometheus externo
+- visualização e alertas via Grafana
+- profile `lambda` sem exposição de Prometheus, já que scrape pull não é a abordagem ideal para Lambda
+
+### Endpoints de observabilidade
+
+- `GET /actuator/health`
+- `GET /actuator/info`
+- `GET /actuator/metrics`
+- `GET /actuator/prometheus`
+
+### Métricas customizadas incluídas
+
+- `auth_login_attempts_total{outcome="success|failure"}`
+- `auth_login_duration`
+- `auth_refresh_token_requests_total{outcome="success|failure"}`
+- `auth_refresh_token_duration`
+- `auth_validate_token_requests_total{outcome="success|failure"}`
+- `auth_validate_token_duration`
+
+Além disso, o Actuator exporta métricas padrão de JVM, HTTP server e pool JDBC/Hikari quando disponível.
+
+### Subindo Prometheus + Grafana localmente
+
+A stack local está em `monitoring/`.
+
+```bash
+cd monitoring
+docker compose up -d
+```
+
+Acesse:
+
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:3000`
+  - usuário: `admin`
+  - senha: `admin`
+
+O datasource Prometheus e o dashboard `FIAP-X Auth Overview` são provisionados automaticamente.
+
+### Como validar as métricas da aplicação
+
+Com a aplicação rodando localmente na porta `8082`:
+
+```bash
+curl http://localhost:8082/actuator/health
+curl http://localhost:8082/actuator/prometheus
+```
+
+### Como replicar para o projeto `user`
+
+Repita o mesmo padrão no `user`:
+
+1. adicionar a dependência do registry Prometheus no `pom.xml`
+2. expor `prometheus` no bloco `management.endpoints.web.exposure.include`
+3. definir tags padrão (`application`, `environment`, `team`)
+4. criar métricas customizadas do domínio do `user`
+5. incluir um novo `job_name` no `monitoring/prometheus/prometheus.yml`
+6. duplicar e adaptar o dashboard do Grafana para o nome da aplicação do `user`
+
+### Observações para AWS
+
+- **container/ECS/Fargate/App Runner**: manter `/actuator/prometheus` e usar scrape do Prometheus
+- **Lambda**: preferir CloudWatch/OTel para métricas; o profile `lambda` mantém apenas `health`
 
 ## 📡 API Endpoints
 
@@ -277,10 +354,14 @@ O serviço suporta controle de acesso baseado em roles:
 
 ```kotlin
 @PreAuthorize("hasRole('ADMIN')")
-fun adminOnlyEndpoint() { ... }
+fun adminOnlyEndpoint() {
+    // implementação protegida
+}
 
 @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-fun userEndpoint() { ... }
+fun userEndpoint() {
+    // implementação protegida
+}
 ```
 
 ### Refresh Token Rotation
