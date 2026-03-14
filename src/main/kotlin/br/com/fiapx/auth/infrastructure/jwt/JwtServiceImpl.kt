@@ -48,9 +48,9 @@ class JwtServiceImpl(
 
             return mapOf(
                 "sub" to claims.subject,
-                "email" to (claims.get("email", String::class.java)
+                "email" to (claims["email"] as? String
                     ?: throw InvalidTokenException("Email ausente no token")),
-                "role" to (claims.get("role", String::class.java)
+                "role" to (claims["role"] as? String
                     ?: throw InvalidTokenException("Role ausente no token")),
                 "iat" to claims.issuedAt,
                 "exp" to claims.expiration
