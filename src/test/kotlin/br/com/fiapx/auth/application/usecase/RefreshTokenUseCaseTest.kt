@@ -1,5 +1,6 @@
 package br.com.fiapx.auth.application.usecase
 
+import br.com.fiapx.auth.config.AuthMetrics
 import br.com.fiapx.auth.domain.exception.InvalidTokenException
 import br.com.fiapx.auth.domain.exception.TokenExpiredException
 import br.com.fiapx.auth.domain.exception.TokenRevokedException
@@ -8,6 +9,7 @@ import br.com.fiapx.auth.domain.model.User
 import br.com.fiapx.auth.domain.repository.RefreshTokenRepository
 import br.com.fiapx.auth.domain.service.JwtService
 import br.com.fiapx.auth.domain.service.UserService
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.*
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
@@ -255,4 +257,131 @@ class RefreshTokenUseCaseTest {
         verify(exactly = 0) { refreshTokenRepository.deleteById(any()) }
         verify(exactly = 0) { refreshTokenRepository.save(any()) }
     }
+
+    @Test
+    fun `should refresh token successfully through metrics timer when authMetrics is provided`() {
+        // Given
+        val refreshTokenValue = "valid-refresh-token"
+        val userId = UUID.randomUUID()
+        val email = "user@example.com"
+        val role = "USER"
+
+        val refreshToken = RefreshToken(
+            id = UUID.randomUUID(),
+            userId = userId,
+            token = refreshTokenValue,
+            expiresAt = Instant.now().plusSeconds(3600),
+            revoked = false,
+            createdAt = Instant.now().minusSeconds(300)
+        )
+        val user = User(id = userId, email = email, passwordHash = "hash", role = role)
+        val newAccessToken = "new.access.token"
+        val newRefreshTokenValue = "new-refresh-token"
+
+        val authMetrics = AuthMetrics(SimpleMeterRegistry())
+        val useCaseWithMetrics = RefreshTokenUseCase(
+            refreshTokenRepository = refreshTokenRepository,
+            userService = userService,
+            jwtService = jwtService,
+            refreshTokenExpirationMs = refreshTokenExpirationMs,
+            enableTokenRotation = true,
+            authMetrics = authMetrics
+        )
+
+        every { refreshTokenRepository.findByToken(refreshTokenValue) } returns refreshToken
+        every { userService.findById(userId) } returns user
+        every { jwtService.generateAccessToken(userId, email, role) } returns newAccessToken
+        every { jwtService.generateRefreshToken() } returns newRefreshTokenValue
+        every { refreshTokenRepository.deleteById(refreshToken.id) } just Runs
+        every { refreshTokenRepository.save(any()) } returns mockk()
+
+        // When
+        val output = useCaseWithMetrics.execute(RefreshTokenUseCase.RefreshTokenInput(refreshTokenValue))
+
+        // Then
+        assertEquals(newAccessToken, output.accessToken)
+        assertEquals(newRefreshTokenValue, output.refreshToken)
+        assertEquals("Bearer", output.tokenType)
+    }
+
+    @Test
+    fun `should increment refreshFailureCounter when token not found and authMetrics is provided`() {
+        // Given
+        val authMetrics = AuthMetrics(SimpleMeterRegistry())
+        val useCaseWithMetrics = RefreshTokenUseCase(
+            refreshTokenRepository = refreshTokenRepository,
+            userService = userService,
+            jwtService = jwtService,
+            refreshTokenExpirationMs = refreshTokenExpirationMs,
+            authMetrics = authMetrics
+        )
+
+        every { refreshTokenRepository.findByToken("missing-token") } returns null
+
+        // When & Then
+        assertThrows<InvalidTokenException> {
+            useCaseWithMetrics.execute(RefreshTokenUseCase.RefreshTokenInput("missing-token"))
+        }
+    }
+
+    @Test
+    fun `should increment refreshFailureCounter when token is revoked and authMetrics is provided`() {
+        // Given
+        val refreshTokenValue = "revoked-token"
+        val refreshToken = RefreshToken(
+            id = UUID.randomUUID(),
+            userId = UUID.randomUUID(),
+            token = refreshTokenValue,
+            expiresAt = Instant.now().plusSeconds(3600),
+            revoked = true,
+            createdAt = Instant.now().minusSeconds(300)
+        )
+
+        val authMetrics = AuthMetrics(SimpleMeterRegistry())
+        val useCaseWithMetrics = RefreshTokenUseCase(
+            refreshTokenRepository = refreshTokenRepository,
+            userService = userService,
+            jwtService = jwtService,
+            refreshTokenExpirationMs = refreshTokenExpirationMs,
+            authMetrics = authMetrics
+        )
+
+        every { refreshTokenRepository.findByToken(refreshTokenValue) } returns refreshToken
+
+        // When & Then
+        assertThrows<TokenRevokedException> {
+            useCaseWithMetrics.execute(RefreshTokenUseCase.RefreshTokenInput(refreshTokenValue))
+        }
+    }
+
+    @Test
+    fun `should increment refreshFailureCounter when token is expired and authMetrics is provided`() {
+        // Given
+        val refreshTokenValue = "expired-token"
+        val refreshToken = RefreshToken(
+            id = UUID.randomUUID(),
+            userId = UUID.randomUUID(),
+            token = refreshTokenValue,
+            expiresAt = Instant.now().minusSeconds(3600),
+            revoked = false,
+            createdAt = Instant.now().minusSeconds(7200)
+        )
+
+        val authMetrics = AuthMetrics(SimpleMeterRegistry())
+        val useCaseWithMetrics = RefreshTokenUseCase(
+            refreshTokenRepository = refreshTokenRepository,
+            userService = userService,
+            jwtService = jwtService,
+            refreshTokenExpirationMs = refreshTokenExpirationMs,
+            authMetrics = authMetrics
+        )
+
+        every { refreshTokenRepository.findByToken(refreshTokenValue) } returns refreshToken
+
+        // When & Then
+        assertThrows<TokenExpiredException> {
+            useCaseWithMetrics.execute(RefreshTokenUseCase.RefreshTokenInput(refreshTokenValue))
+        }
+    }
 }
+

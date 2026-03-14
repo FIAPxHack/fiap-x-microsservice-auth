@@ -1,8 +1,10 @@
 package br.com.fiapx.auth.application.usecase
 
+import br.com.fiapx.auth.config.AuthMetrics
 import br.com.fiapx.auth.domain.exception.InvalidTokenException
 import br.com.fiapx.auth.domain.exception.TokenExpiredException
 import br.com.fiapx.auth.domain.service.JwtService
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.*
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
@@ -138,4 +140,68 @@ class ValidateTokenUseCaseTest {
         assertEquals(role, output.role)
         assertTrue(output.valid)
     }
+
+    @Test
+    fun `should validate token successfully through metrics timer when authMetrics is provided`() {
+        // Given
+        val token = "valid.jwt.token"
+        val userId = UUID.randomUUID()
+        val email = "user@example.com"
+        val role = "USER"
+
+        val claims = mapOf(
+            "sub" to userId.toString(),
+            "email" to email,
+            "role" to role,
+            "iat" to Instant.now(),
+            "exp" to Instant.now().plusSeconds(900)
+        )
+
+        val authMetrics = AuthMetrics(SimpleMeterRegistry())
+        val useCaseWithMetrics = ValidateTokenUseCase(jwtService, authMetrics)
+
+        every { jwtService.validateToken(token) } returns claims
+
+        // When
+        val output = useCaseWithMetrics.execute(ValidateTokenUseCase.ValidateTokenInput(token))
+
+        // Then
+        assertTrue(output.valid)
+        assertEquals(userId, output.userId)
+        assertEquals(email, output.email)
+        assertEquals(role, output.role)
+    }
+
+    @Test
+    fun `should increment validateFailureCounter when token is invalid and authMetrics is provided`() {
+        // Given
+        val token = "invalid.jwt.token"
+
+        val authMetrics = AuthMetrics(SimpleMeterRegistry())
+        val useCaseWithMetrics = ValidateTokenUseCase(jwtService, authMetrics)
+
+        every { jwtService.validateToken(token) } throws InvalidTokenException("Invalid token")
+
+        // When & Then
+        assertThrows<InvalidTokenException> {
+            useCaseWithMetrics.execute(ValidateTokenUseCase.ValidateTokenInput(token))
+        }
+    }
+
+    @Test
+    fun `should increment validateFailureCounter when token is expired and authMetrics is provided`() {
+        // Given
+        val token = "expired.jwt.token"
+
+        val authMetrics = AuthMetrics(SimpleMeterRegistry())
+        val useCaseWithMetrics = ValidateTokenUseCase(jwtService, authMetrics)
+
+        every { jwtService.validateToken(token) } throws TokenExpiredException("Token expired")
+
+        // When & Then
+        assertThrows<TokenExpiredException> {
+            useCaseWithMetrics.execute(ValidateTokenUseCase.ValidateTokenInput(token))
+        }
+    }
 }
+
